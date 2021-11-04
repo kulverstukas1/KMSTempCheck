@@ -104,7 +104,6 @@ void updateS1OnScreen() {
   if (res.length() < 8) res += " ";
   lcd.setCursor(0, 0);
   lcd.print(res.c_str());
-  // if ((sensor1_temp != DEVICE_DISCONNECTED_C) && ((sensor1_temp > 00.00) || (sensor1_temp < 100.00))) lcd.print(" ");
 }
 //-----------------------------
 void updateS2OnScreen() {
@@ -116,14 +115,6 @@ void updateS2OnScreen() {
   if (res.length() < 8) res += " ";
   lcd.setCursor(8, 0);
   lcd.print(res.c_str());
-  // lcd.setCursor(7, 0);
-  // if (sensor2_temp != DEVICE_DISCONNECTED_C) {
-  //   if ((sensor2_temp > 00.00) || (sensor2_temp < 99.99)) lcd.print(" ");
-  //   lcd.print(sensor2_temp);
-  // } else lcd.print("XX.XX");
-  // lcd.print((char)223);
-  // lcd.print("C");
-  // lcd.print(" ");
 }
 //-----------------------------
 void initApMode() {

@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <AsyncTCP.h>
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <SPIFFS.h>
+#include <FS.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <LiquidCrystal_I2C.h>
@@ -14,14 +14,16 @@ IPAddress AP_IP = IPAddress(10, 10, 10, 1);
 IPAddress AP_gateway = IPAddress(10, 10, 10, 1);
 IPAddress AP_nmask = IPAddress(255, 255, 255, 0);
 //-------- Program vars -------
-#define SENSOR_1_PIN 5
-#define SENSOR_2_PIN 18
+#define SENSOR_1_PIN D0
+#define SENSOR_2_PIN D5
 float sensor1_temp;
 float sensor2_temp;
 float sensor1_comp;
 float sensor2_comp;
 long sensor1_millis;
 long sensor2_millis;
+WiFiEventHandler onGotIpHandler;
+WiFiEventHandler onFailedToConnectHandler;
 AsyncWebServer server(80);
 OneWire sensor1_OW(SENSOR_1_PIN);
 OneWire sensor2_OW(SENSOR_2_PIN);
@@ -121,7 +123,6 @@ void initApMode() {
   WiFi.mode(WIFI_AP);
   WiFi.softAP(AP_SSID);
   delay(100); // crude hack
-  WiFi.softAPConfig(AP_IP, AP_gateway, AP_nmask);
   Serial.print("AP IP Address: ");
   Serial.println(WiFi.softAPIP());
   lcd.setCursor(0, 1);
@@ -129,12 +130,12 @@ void initApMode() {
   lcd.print(WiFi.softAPIP());
 }
 //-----------------------------
-void onFailedToConnect(WiFiEvent_t event, WiFiEventInfo_t info) {
+void onFailedToConnect(const WiFiEventStationModeDisconnected& event) {
   Serial.println("Cannot connect to network!");
   initApMode();
 }
 //-----------------------------
-void onGotIp(WiFiEvent_t event, WiFiEventInfo_t info) {
+void onGotIp(const WiFiEventStationModeGotIP& event) {
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
@@ -145,7 +146,7 @@ void onGotIp(WiFiEvent_t event, WiFiEventInfo_t info) {
 void setup() {
   Serial.begin(115200);
 
-  Wire.begin(21, 22);
+  Wire.begin(4, 5);
   lcd.init();
   lcd.clear();
   lcd.backlight();
@@ -168,11 +169,15 @@ void setup() {
     lcd.print("SPIFFS error");
   } else {
     WiFi.mode(WIFI_STA);
-    WiFi.onEvent(onFailedToConnect, SYSTEM_EVENT_STA_DISCONNECTED);
-    WiFi.onEvent(onGotIp, SYSTEM_EVENT_STA_GOT_IP);
+    onFailedToConnectHandler = WiFi.onStationModeDisconnected(onFailedToConnect);
+    onGotIpHandler = WiFi.onStationModeGotIP(onGotIp);
     String ssid = readFile(SPIFFS, "/ssid.txt");
     if (ssid.isEmpty()) initApMode();
-    else WiFi.begin(ssid.c_str(), readFile(SPIFFS, "/passwd.txt").c_str());
+    else {
+      WiFi.setAutoReconnect(true);
+      WiFi.persistent(true);
+      WiFi.begin(ssid.c_str(), readFile(SPIFFS, "/passwd.txt").c_str());
+    }
   }
 
   sensor1_comp = readFile(SPIFFS, "/sensor1.txt").toFloat();

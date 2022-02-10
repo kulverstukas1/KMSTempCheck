@@ -14,7 +14,7 @@ IPAddress AP_IP = IPAddress(10, 10, 10, 1);
 IPAddress AP_gateway = IPAddress(10, 10, 10, 1);
 IPAddress AP_nmask = IPAddress(255, 255, 255, 0);
 //-------- Program vars -------
-#define SENSOR_1_PIN D0
+#define SENSOR_1_PIN D6
 #define SENSOR_2_PIN D5
 float sensor1_temp;
 float sensor2_temp;
@@ -81,8 +81,8 @@ void readTemp_s1() {
   float tmp = sensor1_DT.getTempCByIndex(0);
   sensor1_temp = tmp;
   if (sensor1_temp != DEVICE_DISCONNECTED_C) sensor1_temp += sensor1_comp;
-  // Serial.print("S1: ");
-  // Serial.println(sensor1_temp);
+  Serial.print("S1: ");
+  Serial.println(sensor1_temp);
   sensor1_DT.requestTemperatures();
   sensor1_millis = millis();
 }
@@ -91,8 +91,8 @@ void readTemp_s2() {
   float tmp = sensor2_DT.getTempCByIndex(0);
   sensor2_temp = tmp;
   if (sensor2_temp != DEVICE_DISCONNECTED_C) sensor2_temp += sensor2_comp;
-  // Serial.print("S2: ");
-  // Serial.println(sensor2_temp);
+  Serial.print("S2: ");
+  Serial.println(sensor2_temp);
   sensor2_DT.requestTemperatures();
   sensor2_millis = millis();
 }

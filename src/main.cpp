@@ -14,6 +14,8 @@ IPAddress AP_IP = IPAddress(10, 10, 10, 1);
 IPAddress AP_gateway = IPAddress(10, 10, 10, 1);
 IPAddress AP_nmask = IPAddress(255, 255, 255, 0);
 //-------- Program vars -------
+// this value is given when sensor is initializing
+#define SENSOR_INIT 85.00
 #define SENSOR_1_PIN D6
 #define SENSOR_2_PIN D5
 #define AP_MODE_PIN D8
@@ -89,7 +91,7 @@ String processor(const String& var) {
 void readTemp_s1() {
   float tmp = sensor1_DT.getTempCByIndex(0);
   sensor1_temp = tmp;
-  if (sensor1_temp != DEVICE_DISCONNECTED_C) sensor1_temp += sensor1_comp;
+  if ((sensor1_temp != DEVICE_DISCONNECTED_C) && (sensor1_temp != SENSOR_INIT)) sensor1_temp += sensor1_comp;
   Serial.print("S1: ");
   Serial.println(sensor1_temp);
   sensor1_DT.requestTemperatures();
@@ -99,7 +101,7 @@ void readTemp_s1() {
 void readTemp_s2() {
   float tmp = sensor2_DT.getTempCByIndex(0);
   sensor2_temp = tmp;
-  if (sensor2_temp != DEVICE_DISCONNECTED_C) sensor2_temp += sensor2_comp;
+  if ((sensor2_temp != DEVICE_DISCONNECTED_C) && (sensor1_temp != SENSOR_INIT)) sensor2_temp += sensor2_comp;
   Serial.print("S2: ");
   Serial.println(sensor2_temp);
   sensor2_DT.requestTemperatures();
@@ -146,6 +148,8 @@ void onGotIp(const WiFiEventStationModeGotIP& event) {
   Serial.print("IP Address: ");
   Serial.println(ip);
   lcd.setCursor(0, 1);
+  lcd.print("                ");
+  lcd.setCursor(0, 1);
   lcd.print(ip);
 }
 //-----------------------------
@@ -183,12 +187,16 @@ void setup() {
   sensor1_DT.begin();
   sensor1_DT.requestTemperatures();
   sensor1_millis = millis();
+  sensor1_temp = DEVICE_DISCONNECTED_C;
+  updateS1OnScreen();
 
   sensor2_DT.setWaitForConversion(false);
   sensor2_DT.setResolution(0x1F);
   sensor2_DT.begin();
   sensor2_DT.requestTemperatures();
   sensor2_millis = millis();
+  sensor2_temp = DEVICE_DISCONNECTED_C;
+  updateS2OnScreen();
 
   if (!SPIFFS.begin()) {
     Serial.println("SPIFFS Failed!");
@@ -196,6 +204,9 @@ void setup() {
     lcd.print("SPIFFS error");
     while (true) {}
   }
+
+  lcd.setCursor(0, 1);
+  lcd.print("CONNECTING");
 
   connectToWifi();
 

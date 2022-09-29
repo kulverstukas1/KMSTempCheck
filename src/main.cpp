@@ -160,6 +160,7 @@ void onDisconnected(const WiFiEventStationModeDisconnected& event) {
 }
 //-----------------------------
 void connectToWifi() {
+  isInApMode = false;
   WiFi.mode(WIFI_STA);
   onGotIpHandler = WiFi.onStationModeGotIP(onGotIp);
   onFailedToConnectHandler = WiFi.onStationModeDisconnected(onDisconnected);

@@ -101,7 +101,7 @@ void readTemp_s1() {
 void readTemp_s2() {
   float tmp = sensor2_DT.getTempCByIndex(0);
   sensor2_temp = tmp;
-  if ((sensor2_temp != DEVICE_DISCONNECTED_C) && (sensor1_temp != SENSOR_INIT)) sensor2_temp += sensor2_comp;
+  if ((sensor2_temp != DEVICE_DISCONNECTED_C) && (sensor2_temp != SENSOR_INIT)) sensor2_temp += sensor2_comp;
   Serial.print("S2: ");
   Serial.println(sensor2_temp);
   sensor2_DT.requestTemperatures();

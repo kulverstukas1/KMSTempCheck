@@ -3,22 +3,28 @@
 	<style type="text/css">
 		form { font-family: Tahoma }
 	</style>
-    <form action="/savenetwork">
-        <h2>Enter network info:</h2>
-        SSID: <input type="text" name="ssid" value="%ssid%" style="margin-left: 27px"><br/>
-        PASSWD: <input type="text" name="passwd" value="%passwd%"><br/><br/>
-        <input type="submit" value="SAVE" onclick="submitMessage()" style="height: 34px; width: 75px">
-    </form>
+    <div>
+        <form action="/network">
+            <h2>Enter network info:</h2>
+            SSID: <input type="text" name="ssid" value="%ssid%" style="margin-left: 27px"><br/>
+            PASSWD: <input type="text" name="passwd" value="%passwd%"><br/><br/>
+            <input type="submit" value="SAVE" name="save" onclick="savedMessage()" style="height: 34px; width: 75px">
+            <input type="submit" value="CONNECT" name="connect" onclick="connectMessage()" style="height: 34px; width: 75px">
+        </form>
+    </div>
     <form action="/savecalib">
-      <h2>Enter compensation values:</h2>
-      Sensor 1: <input type="text" name="sens1" value="%sens1%"><br/>
-      Sensor 2: <input type="text" name="sens2" value="%sens2%"><br/><br/>
-      <input type="submit" value="SAVE" onclick="submitMessage()" style="height: 34px; width: 75px">
+        <h2>Enter compensation values:</h2>
+        Sensor 1: <input type="text" name="sens1" value="%sens1%"><br/>
+        Sensor 2: <input type="text" name="sens2" value="%sens2%"><br/><br/>
+        <input type="submit" value="SAVE" onclick="savedMessage()" style="height: 34px; width: 75px">
     </form>
     <script>
-        function submitMessage() {
+        function savedMessage() {
           alert("Saved to memory!");
           setTimeout(function() { document.location.reload(false); }, 500);
         }
-      </script>
+        function connectMessage() {
+          alert("Connecting to network");
+        }
+    </script>
 </html>

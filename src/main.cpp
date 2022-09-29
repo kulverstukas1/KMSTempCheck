@@ -206,21 +206,28 @@ void setup() {
     request->send(SPIFFS, "/index.html", "text/html", false, processor);
   });
 
-  server.on("/savenetwork", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String reqData;
-    if (request->hasParam("ssid")) {
-      reqData = request->getParam("ssid")->value();
-      writeFile(SPIFFS, "/ssid.txt", reqData.c_str());
-      Serial.print("Received ssid: ");
-      Serial.println(reqData);
+  server.on("/network", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("save")) {
+      String reqData;
+      if (request->hasParam("ssid")) {
+        reqData = request->getParam("ssid")->value();
+        writeFile(SPIFFS, "/ssid.txt", reqData.c_str());
+        Serial.print("Received ssid: ");
+        Serial.println(reqData);
+      }
+      if (request->hasParam("passwd")) {
+        reqData = request->getParam("passwd")->value();
+        writeFile(SPIFFS, "/passwd.txt", reqData.c_str());
+        Serial.print("Received passwd: ");
+        Serial.println(reqData);
+      }
+      request->redirect("/");
+    } else if (request->hasParam("connect")) {
+      Serial.println("CONNECTTING");
+      lcd.setCursor(0, 1);
+      lcd.print("CONNECTING      ");
+      connectToWifi();
     }
-    if (request->hasParam("passwd")) {
-      reqData = request->getParam("passwd")->value();
-      writeFile(SPIFFS, "/passwd.txt", reqData.c_str());
-      Serial.print("Received passwd: ");
-      Serial.println(reqData);
-    }
-    request->redirect("/");
   });
 
   server.on("/savecalib", HTTP_GET, [](AsyncWebServerRequest *request) {

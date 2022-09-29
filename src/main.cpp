@@ -16,12 +16,21 @@ IPAddress AP_nmask = IPAddress(255, 255, 255, 0);
 //-------- Program vars -------
 #define SENSOR_1_PIN D6
 #define SENSOR_2_PIN D5
+#define AP_MODE_PIN D8
+#define LONG_PRESS_MILLIS 4000
+#define RECONNECT_MILLIS 10000
 float sensor1_temp;
 float sensor2_temp;
 float sensor1_comp;
 float sensor2_comp;
-long sensor1_millis;
-long sensor2_millis;
+unsigned long sensor1_millis;
+unsigned long sensor2_millis;
+unsigned long pressedTime;
+unsigned long releasedTime;
+unsigned long previousMillis;
+int lastState;
+int currentState;
+bool isInApMode;
 WiFiEventHandler onGotIpHandler;
 WiFiEventHandler onFailedToConnectHandler;
 AsyncWebServer server(80);
@@ -120,6 +129,7 @@ void updateS2OnScreen() {
 }
 //-----------------------------
 void initApMode() {
+  isInApMode = true;
   WiFi.mode(WIFI_AP);
   WiFi.softAP(AP_SSID);
   delay(100); // crude hack
@@ -130,12 +140,8 @@ void initApMode() {
   lcd.print(WiFi.softAPIP());
 }
 //-----------------------------
-void onFailedToConnect(const WiFiEventStationModeDisconnected& event) {
-  Serial.println("Cannot connect to network!");
-  initApMode();
-}
-//-----------------------------
 void onGotIp(const WiFiEventStationModeGotIP& event) {
+  isInApMode = false;
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
@@ -143,8 +149,29 @@ void onGotIp(const WiFiEventStationModeGotIP& event) {
   lcd.print(ip);
 }
 //-----------------------------
+void onDisconnected(const WiFiEventStationModeDisconnected& event) {
+  lcd.setCursor(0, 1);
+  lcd.print("DISCONNECTED     ");
+  WiFi.disconnect();
+}
+//-----------------------------
+void connectToWifi() {
+  WiFi.mode(WIFI_STA);
+  onGotIpHandler = WiFi.onStationModeGotIP(onGotIp);
+  onFailedToConnectHandler = WiFi.onStationModeDisconnected(onDisconnected);
+  String ssid = readFile(SPIFFS, "/ssid.txt");
+  if (ssid.isEmpty()) initApMode();
+  else {
+    WiFi.setAutoReconnect(true);
+    WiFi.persistent(true);
+    WiFi.begin(ssid.c_str(), readFile(SPIFFS, "/passwd.txt").c_str());
+  } 
+}
+//-----------------------------
 void setup() {
   Serial.begin(115200);
+
+  pinMode(AP_MODE_PIN, INPUT_PULLUP);
 
   Wire.begin(4, 5);
   lcd.init();
@@ -167,18 +194,10 @@ void setup() {
     Serial.println("SPIFFS Failed!");
     lcd.setCursor(0, 1);
     lcd.print("SPIFFS error");
-  } else {
-    WiFi.mode(WIFI_STA);
-    onFailedToConnectHandler = WiFi.onStationModeDisconnected(onFailedToConnect);
-    onGotIpHandler = WiFi.onStationModeGotIP(onGotIp);
-    String ssid = readFile(SPIFFS, "/ssid.txt");
-    if (ssid.isEmpty()) initApMode();
-    else {
-      WiFi.setAutoReconnect(true);
-      WiFi.persistent(true);
-      WiFi.begin(ssid.c_str(), readFile(SPIFFS, "/passwd.txt").c_str());
-    }
+    while (true) {}
   }
+
+  connectToWifi();
 
   sensor1_comp = readFile(SPIFFS, "/sensor1.txt").toFloat();
   sensor2_comp = readFile(SPIFFS, "/sensor2.txt").toFloat();
@@ -234,6 +253,33 @@ void setup() {
 }
 
 void loop() {
+  if (!isInApMode) {
+    currentState = digitalRead(AP_MODE_PIN);
+    if ((lastState == LOW) && (currentState == HIGH)) {
+      pressedTime = millis();
+    } else if ((lastState == HIGH) && (currentState == LOW)) {
+      releasedTime = millis();
+    }
+    long pressDuration = releasedTime - pressedTime;
+
+    if (pressDuration >= LONG_PRESS_MILLIS) {
+      initApMode();
+      pressedTime = 0;
+      releasedTime = 0;
+    }
+
+    lastState = currentState;
+  }
+
+  if (!isInApMode && (WiFi.status() != WL_CONNECTED)) {
+    unsigned long currentMillis = millis();
+    if ((currentMillis - previousMillis) >= RECONNECT_MILLIS) {
+      Serial.println("RECONNECTING TO WIFI");
+      connectToWifi();
+      previousMillis = currentMillis;
+    }
+  }
+
   if ((millis() - sensor1_millis) > 1000) {
     readTemp_s1();
     updateS1OnScreen();

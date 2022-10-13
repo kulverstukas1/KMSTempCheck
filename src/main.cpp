@@ -40,7 +40,7 @@ OneWire sensor1_OW(SENSOR_1_PIN);
 OneWire sensor2_OW(SENSOR_2_PIN);
 DallasTemperature sensor1_DT(&sensor1_OW);
 DallasTemperature sensor2_DT(&sensor2_OW);
-LiquidCrystal_I2C lcd(0x3F, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 //-----------------------------
 String readFile(fs::FS &fs, const char * path) {
   Serial.println();
